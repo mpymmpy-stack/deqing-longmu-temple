@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>德庆悦城龙母祖庙 · 三维云游</title>
+<style>
+  :root{
+    --zhu:#9e2b25;          /* 朱红 */
+    --zhu-deep:#6e1c18;
+    --jin:#d4a017;          /* 琉璃黄 */
+    --jin-light:#e8c25a;
+    --ink:#2b2118;          /* 墨色 */
+    --paper:#f6efe1;        /* 宣纸色 */
+    --jade:#3c5a4a;
+    --stone:#8d8a82;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#0d0a08;
+    font-family:"Noto Serif SC","Songti SC","STSong","SimSun",serif;color:var(--paper);}
+  #app{position:fixed;inset:0;}
+  #scene-container{position:absolute;inset:0;}
+  canvas{display:block;}
+
+  /* 顶部标题栏 */
+  header#topbar{
+    position:absolute;top:0;left:0;right:0;z-index:20;
+    padding:14px 26px 12px;
+    background:linear-gradient(180deg, rgba(20,12,8,.82), rgba(20,12,8,0));
+    pointer-events:none;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+  }
+  header#topbar .title{pointer-events:auto;}
+  header#topbar h1{
+    font-size:26px;letter-spacing:6px;font-weight:700;
+    color:var(--jin-light);text-shadow:0 2px 10px rgba(0,0,0,.6);
+    display:flex;align-items:center;gap:14px;
+  }
+  header#topbar h1 .seal{
+    display:inline-block;width:34px;height:34px;line-height:34px;text-align:center;
+    background:var(--zhu);color:var(--paper);font-size:18px;letter-spacing:0;
+    border:2px solid var(--jin);box-shadow:0 0 0 1px var(--zhu-deep) inset;border-radius:4px;
+  }
+  header#topbar .sub{font-size:13px;color:#cdbfa1;letter-spacing:2px;margin-top:6px;opacity:.92;}
+  header#topbar .meta{text-align:right;font-size:12px;color:#a99a7e;letter-spacing:1px;pointer-events:auto;line-height:1.7;}
+  header#topbar .meta b{color:var(--jin-light);font-weight:600;}
+
+  /* 左侧景点导航 */
+  aside#spot-nav{
+    position:absolute;left:18px;top:92px;bottom:84px;z-index:18;
+    width:208px;overflow-y:auto;
+    background:linear-gradient(180deg,rgba(28,20,14,.78),rgba(28,20,14,.62));
+    border:1px solid rgba(212,160,23,.32);border-radius:8px;
+    padding:12px 10px;backdrop-filter:blur(4px);
+    box-shadow:0 8px 30px rgba(0,0,0,.45);
+  }
+  aside#spot-nav h3{
+    font-size:13px;color:var(--jin-light);letter-spacing:4px;text-align:center;
+    padding:6px 0 10px;border-bottom:1px solid rgba(212,160,23,.25);margin-bottom:8px;
+  }
+  .spot-item{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 10px;margin:3px 0;border-radius:6px;cursor:pointer;
+    color:#e6dcc4;font-size:14px;letter-spacing:1px;
+    border:1px solid transparent;transition:all .18s ease;
+  }
+  .spot-item .idx{
+    flex:0 0 22px;height:22px;line-height:22px;text-align:center;
+    background:rgba(212,160,23,.14);color:var(--jin-light);border-radius:50%;
+    font-size:12px;font-family:"Times New Roman",serif;
+  }
+  .spot-item:hover{background:rgba(212,160,23,.16);border-color:rgba(212,160,23,.4);transform:translateX(2px);}
+  .spot-item.active{background:linear-gradient(90deg,rgba(158,43,37,.55),rgba(158,43,37,.12));border-color:var(--zhu);}
+  .spot-item.active .idx{background:var(--zhu);color:var(--paper);}
+
+  /* 信息卡 */
+  #info-card{
+    position:absolute;right:18px;bottom:84px;z-index:19;width:340px;max-width:calc(100vw - 36px);
+    background:linear-gradient(180deg,rgba(246,239,225,.97),rgba(238,228,208,.95));
+    border:1px solid var(--jin);border-radius:10px;color:var(--ink);
+    box-shadow:0 14px 40px rgba(0,0,0,.5);overflow:hidden;
+    transform:translateY(18px);opacity:0;pointer-events:none;transition:all .28s ease;
+  }
+  #info-card.show{transform:translateY(0);opacity:1;pointer-events:auto;}
+  #info-card .head{
+    padding:12px 16px;background:linear-gradient(90deg,var(--zhu),var(--zhu-deep));
+    color:var(--paper);display:flex;justify-content:space-between;align-items:center;
+  }
+  #info-card .head .name{font-size:19px;letter-spacing:3px;font-weight:700;}
+  #info-card .head .name small{display:block;font-size:11px;letter-spacing:2px;opacity:.85;font-weight:400;margin-top:2px;}
+  #info-card .close{cursor:pointer;font-size:20px;line-height:1;opacity:.85;padding:2px 6px;border-radius:4px;}
+  #info-card .close:hover{opacity:1;background:rgba(255,255,255,.15);}
+  #info-card .body{padding:14px 16px 16px;}
+  #info-card .tag{display:inline-block;font-size:11px;letter-spacing:1px;color:var(--zhu-deep);
+    background:rgba(212,160,23,.22);border:1px solid rgba(212,160,23,.5);padding:2px 8px;border-radius:10px;margin-bottom:10px;}
+  #info-card .desc{font-size:14.5px;line-height:1.85;letter-spacing:.5px;color:#3a2e21;text-align:justify;}
+  #info-card .feat{margin-top:12px;padding-top:10px;border-top:1px dashed rgba(110,28,24,.3);font-size:12.5px;line-height:1.7;color:#6a5638;}
+  #info-card .feat b{color:var(--zhu-deep);}
+
+  /* 底部提示栏 */
+  #hint{
+    position:absolute;left:0;right:0;bottom:0;z-index:17;
+    padding:10px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px;
+    background:linear-gradient(0deg,rgba(20,12,8,.85),rgba(20,12,8,0));pointer-events:none;
+    font-size:12.5px;color:#b6a786;letter-spacing:1px;
+  }
+  #hint .ops{display:flex;gap:18px;flex-wrap:wrap;}
+  #hint .ops span b{color:var(--jin-light);font-weight:600;}
+  #btn-reset{pointer-events:auto;cursor:pointer;background:rgba(158,43,37,.7);color:var(--paper);
+    border:1px solid var(--jin);border-radius:5px;padding:6px 14px;font-size:12.5px;letter-spacing:2px;
+    font-family:inherit;transition:all .18s;}
+  #btn-reset:hover{background:var(--zhu);}
+
+  /* 加载遮罩 */
+  #loading{position:absolute;inset:0;z-index:50;background:#15100a;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;transition:opacity .6s ease;}
+  #loading.hide{opacity:0;pointer-events:none;}
+  #loading .ring{width:54px;height:54px;border:3px solid rgba(212,160,23,.25);border-top-color:var(--jin);
+    border-radius:50%;animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #loading .txt{font-size:15px;letter-spacing:4px;color:var(--jin-light);}
+  #loading .err{font-size:12px;color:#c98a82;max-width:420px;text-align:center;line-height:1.7;display:none;}
+
+  @media (max-width:720px){
+    aside#spot-nav{width:160px;top:84px;bottom:120px;}
+    #info-card{width:calc(100vw - 36px);right:18px;left:18px;}
+    header#topbar h1{font-size:19px;letter-spacing:3px;}
+    header#topbar .meta{display:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="scene-container"></div>
+
+  <header id="topbar">
+    <div class="title">
+      <h1><span class="seal">龍</span>德庆悦城龙母祖庙</h1>
+      <div class="sub">岭南古建 · 三维云游 · 程溪之畔 五龙之母</div>
+    </div>
+    <div class="meta">
+      全国重点文物保护单位 · 2001<br>
+      与广州陈家祠、佛山祖庙并称 <b>岭南古建筑三宝</b>
+    </div>
+  </header>
+
+  <aside id="spot-nav">
+    <h3>景 点 云 游</h3>
+    <div id="spot-list"></div>
+  </aside>
+
+  <div id="info-card">
+    <div class="head">
+      <div class="name" id="ic-name">景点<small id="ic-sub"></small></div>
+      <div class="close" id="ic-close">×</div>
+    </div>
+    <div class="body">
+      <span class="tag" id="ic-tag"></span>
+      <div class="desc" id="ic-desc"></div>
+      <div class="feat" id="ic-feat"></div>
+    </div>
+  </div>
+
+  <div id="hint">
+    <div class="ops">
+      <span><b>拖拽</b> 旋转视角</span>
+      <span><b>滚轮</b> 缩放</span>
+      <span><b>点击建筑</b> 查看景点</span>
+    </div>
+    <button id="btn-reset">俯瞰全庙</button>
+  </div>
+
+  <div id="loading">
+    <div class="ring"></div>
+    <div class="txt" id="load-txt">正 在 构 筑 龙 母 庙 …</div>
+    <div class="err" id="load-err"></div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============================================================
+   景点资料
+   ============================================================ */
+const SPOTS = [
+  { id:'paifang', name:'石牌坊', sub:'岭海擎灵 · 庙前第一进',
+    tag:'山门导引', pos:[0,4,60], cam:[0,14,92],
+    desc:'庙前石牌坊巍然矗立，为入庙首景。坊额题"岭海擎灵"四字，旌表龙母恩泽岭南、威镇海疆之意。石构件榫卯相接，精雕云龙瑞兽，是岭南石雕艺术的代表。',
+    feat:'<b>看点：</b>四柱三间冲天式，石雕蟠龙柱础；额坊"岭海擎灵"为龙母信仰核心题刻。' },
+
+  { id:'chengxi', name:'程溪', sub:'五龙育化之地',
+    tag:'山水形胜', pos:[0,1.2,78], cam:[6,10,104],
+    desc:'程溪蜿蜒于庙前，汇入西江。相传龙母温氏于程溪之滨拾得巨卵，孵化五龙，五龙感化呼之为母。溪水清冽，是龙母传说的发源之地，亦为祖庙择址于此的渊源。',
+    feat:'<b>典故：</b>《岭南摭怪》载温女拾卵孵龙事；程溪与西江交汇处即祖庙所在。' },
+
+  { id:'shanmen', name:'山门', sub:'前殿 · 祖庙正门',
+    tag:'中轴第一殿', pos:[0,5,38], cam:[0,12,68],
+    desc:'山门为龙母祖庙正门，面阔三间，进深两间。朱墙碧瓦，门洞高敞，两侧立护法神将。过山门即入庙内庭院，香火氤氲，钟鼓相闻，为信众朝拜之始。',
+    feat:'<b>建筑：</b>硬山顶，青砖朱墙；门枕石、抱鼓石雕工精细，岭南庙宇门制典型。' },
+
+  { id:'xiangting', name:'香亭', sub:'敬香拜庭',
+    tag:'拜庭香火', pos:[0,4,20], cam:[0,11,48],
+    desc:'香亭立于山门与大殿之间的庭院正中，四柱攒尖，是为香客敬香、瞻拜之所。亭内长年香火不绝，青烟缭绕，直通大殿龙母金身，是信众与神明沟通的灵犀之处。',
+    feat:'<b>形制：</b>四角攒尖顶石亭，覆琉璃瓦；亭下设巨大香炉，每逢龙母诞香客云集。' },
+
+  { id:'dongyutang', name:'东裕堂', sub:'东配殿',
+    tag:'配殿 · 东厢', pos:[24,4.5,22], cam:[34,12,44],
+    desc:'东裕堂为庙内东配殿，与西客厅相对，构成四合院落。堂内供奉龙母侍从及诸般神祇，并陈列龙母文化史料。砖雕木雕琳琅满目，可细品岭南"五雕"工艺。',
+    feat:'<b>工艺：</b>砖雕照壁、木雕花楣、灰塑脊饰俱全，为研赏岭南装饰艺术之佳处。' },
+
+  { id:'xiking', name:'西客厅', sub:'西配殿',
+    tag:'配殿 · 西厢', pos:[-24,4.5,22], cam:[-34,12,44],
+    desc:'西客厅为西配殿，旧时为接待乡绅信众、议事休憩之所。梁架用材粗壮，驼峰斗栱雕刻生动，保留清代光绪年间重建风貌，与东裕堂遥相呼应。',
+    feat:'<b>结构：</b>抬梁式木构架，驼峰斗栱承檩；墙体青砖磨缝，防潮地漏作金钱纹。' },
+
+  { id:'dadian', name:'大殿', sub:'正殿 · 龙母金身',
+    tag:'中轴核心', pos:[0,7,-4], cam:[0,13,30],
+    desc:'大殿为龙母祖庙主殿，重檐歇山顶，琉璃碧瓦，飞檐翘角，气象恢宏。殿中供奉龙母娘娘金身，温容慈目，端坐九龙之上。此殿集岭南古建五雕之大成，为全庙精华所在。',
+    feat:'<b>精华：</b>重檐歇山顶，殿前蟠龙石柱、檐下木雕人物故事、脊上灰塑陶塑瑞兽，堪称三绝。' },
+
+  { id:'shuzhuang', name:'梳妆楼', sub:'龙母理妆之所',
+    tag:'后部楼阁 · 东', pos:[18,8,-26], cam:[30,14,-2],
+    desc:'梳妆楼位于大殿之后东侧，为两层楼阁，传为龙母晨昏梳妆理妆之处。楼体轻盈，翼角高翘，登楼可俯瞰全庙与程溪远山，是庙内最具灵动之美的建筑。',
+    feat:'<b>传说：</b>龙母为女性神，故设梳妆楼；每逢诞期，信众以新妆镜奁奉于此。' },
+
+  { id:'beiting', name:'碑亭', sub:'历代碑刻',
+    tag:'碑刻 · 后部', pos:[-16,4,-24], cam:[-28,12,-2],
+    desc:'碑亭立于后部西侧，亭内立历代重修碑刻，自宋元以迄明清，记述龙母灵迹与庙宇沿革。碑文斑驳，是研究岭南龙母信仰与古建史的第一手金石史料。',
+    feat:'<b>史料：</b>存清代《重修龙母祖庙碑记》等多通；碑首蟠螭，碑座赑屃，规制端严。' },
+
+  { id:'houdian', name:'后殿', sub:'龙母寝宫',
+    tag:'中轴终端', pos:[0,6,-42], cam:[0,13,-16],
+    desc:'后殿为祖庙中轴最北一进，传为龙母安寝之所，殿内供奉龙母卧像及侍女像，宁静肃穆。后殿依五龙山势而建，背山面水，正合堪舆"枕山襟水"之局。',
+    feat:'<b>格局：</b>庙背五龙山，前临程溪西江，枕山襟水；与牌坊、山门、大殿共构纵深轴线。' },
+];
+
+/* ============================================================
+   场景初始化
+   ============================================================ */
+const container = document.getElementById('scene-container');
+const W = ()=>container.clientWidth, H = ()=>container.clientHeight;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xbcd6e8);
+scene.fog = new THREE.Fog(0xbcd6e8, 130, 340);
+
+const camera = new THREE.PerspectiveCamera(48, W()/H(), 0.1, 1200);
+camera.position.set(0, 60, 110);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(W(), H());
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+/* 光照 */
+scene.add(new THREE.HemisphereLight(0xddeeff, 0x55503a, 0.75));
+scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.15);
+sun.position.set(70, 95, 55);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 10; sun.shadow.camera.far = 400;
+sun.shadow.camera.left = -120; sun.shadow.camera.right = 120;
+sun.shadow.camera.top = 120; sun.shadow.camera.bottom = -120;
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+/* 控制器 */
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.minDistance = 12;
+controls.maxDistance = 240;
+controls.target.set(0, 6, 10);
+
+/* ============================================================
+   材质工厂
+   ============================================================ */
+const M = {
+  wall:   ()=>new THREE.MeshStandardMaterial({color:0x9e2b25, roughness:0.85, metalness:0.0}),
+  wallDeep:()=>new THREE.MeshStandardMaterial({color:0x6e1c18, roughness:0.85}),
+  tile:   ()=>new THREE.MeshStandardMaterial({color:0xc99a2e, roughness:0.55, metalness:0.05}),
+  tileGreen:()=>new THREE.MeshStandardMaterial({color:0x3f6b54, roughness:0.55}),
+  ridge:  ()=>new THREE.MeshStandardMaterial({color:0x8a6a1e, roughness:0.6}),
+  stone:  ()=>new THREE.MeshStandardMaterial({color:0xb9b4a8, roughness:0.95}),
+  stoneDark:()=>new THREE.MeshStandardMaterial({color:0x7d7a70, roughness:0.95}),
+  wood:   ()=>new THREE.MeshStandardMaterial({color:0x4a2c1a, roughness:0.8}),
+  woodDark:()=>new THREE.MeshStandardMaterial({color:0x2e1a10, roughness:0.8}),
+  gold:   ()=>new THREE.MeshStandardMaterial({color:0xe8c25a, roughness:0.35, metalness:0.5}),
+  pillar: ()=>new THREE.MeshStandardMaterial({color:0x8a1f1a, roughness:0.7}),
+  grass:  ()=>new THREE.MeshStandardMaterial({color:0x6f7d4e, roughness:1.0}),
+  water:  ()=>new THREE.MeshStandardMaterial({color:0x3f7fae, roughness:0.2, metalness:0.3, transparent:true, opacity:0.82}),
+  tree:   ()=>new THREE.MeshStandardMaterial({color:0x35532f, roughness:0.9}),
+  trunk:  ()=>new THREE.MeshStandardMaterial({color:0x5a3a22, roughness:0.95}),
+  mountain:()=>new THREE.MeshStandardMaterial({color:0x5d7a6a, roughness:1.0, flatShading:true}),
+};
+
+/* ============================================================
+   通用构件
+   ============================================================ */
+// 两点之间放一根方梁
+function beamBetween(p1, p2, t, mat){
+  const dir = new THREE.Vector3().subVectors(p2, p1);
+  const len = dir.length();
+  const g = new THREE.BoxGeometry(t, t, len);
+  const m = new THREE.Mesh(g, mat);
+  m.position.copy(p1).add(p2).multiplyScalar(0.5);
+  m.lookAt(p2);
+  return m;
+}
+
+// 中国式四面坡屋顶（庑殿顶近似）：四棱台 + 正脊 + 四戗脊 + 翘角
+function makeRoof(w, d, h, opts={}){
+  const g = new THREE.Group();
+  const tileMat = opts.green ? M.tileGreen() : M.tile();
+  const topW = w * (opts.topRatio||0.28);
+  const topD = d * (opts.topRatio||0.28);
+
+  // 主屋面：用四棱台。CylinderGeometry 4 段，旋转 45° 后边平行坐标轴。
+  const eaves = 0.10; // 出檐
+  const bw = w + eaves*2, bd = d + eaves*2;
+  const geo = new THREE.CylinderGeometry(0.02, 1, 1, 4, 1, false);
+  const body = new THREE.Mesh(geo, tileMat);
+  body.rotation.y = Math.PI/4;
+  body.scale.set(bw/Math.SQRT2, h, bd/Math.SQRT2);
+  body.position.y = h/2;
+  body.castShadow = true; body.receiveShadow = true;
+  g.add(body);
+
+  // 正脊（沿 x 方向的屋脊横条）
+  const ridgeMat = M.ridge();
+  const ridge = new THREE.Mesh(new THREE.BoxGeometry(topW*1.05, h*0.13, topD*0.5), ridgeMat);
+  ridge.position.set(0, h + h*0.06, 0);
+  ridge.castShadow = true;
+  g.add(ridge);
+  // 正脊两端的鸱吻（小翘块）
+  for(const sx of [-1,1]){
+    const chi = new THREE.Mesh(new THREE.ConeGeometry(h*0.16, h*0.42, 4), ridgeMat);
+    chi.position.set(sx*topW*0.55, h + h*0.22, 0);
+    chi.rotation.z = sx * -0.5;
+    chi.castShadow = true;
+    g.add(chi);
+  }
+
+  // 四条戗脊（从正脊端到屋檐角）
+  const topY = h + h*0.02;
+  const eaveY = 0;
+  const corners = [
+    [topW*0.5, topD*0.5, bw*0.5, bd*0.5],
+    [-topW*0.5, topD*0.5, -bw*0.5, bd*0.5],
+    [topW*0.5, -topD*0.5, bw*0.5, -bd*0.5],
+    [-topW*0.5, -topD*0.5, -bw*0.5, -bd*0.5],
+  ];
+  for(const [tx, tz, ex, ez] of corners){
+    g.add(beamBetween(
+      new THREE.Vector3(tx, topY, tz),
+      new THREE.Vector3(ex, eaveY, ez),
+      h*0.07, ridgeMat
+    ));
+    // 翘角：檐角处一片向上翘起的小三角
+    const fly = new THREE.Mesh(new THREE.ConeGeometry(h*0.14, h*0.4, 3), tileMat);
+    fly.position.set(ex, eaveY + h*0.12, ez);
+    fly.rotation.x = (tz>0?1:-1)*0.5;
+    fly.rotation.z = (tx>0?-0.4:0.4);
+    fly.castShadow = true;
+    g.add(fly);
+  }
+  return g;
+}
+
+// 红墙台基组合（建筑底盘）
+function makeBase(w, d, h, stoneMat){
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w+0.8, h, d+0.8), stoneMat||M.stone());
+  base.position.y = h/2;
+  base.castShadow = true; base.receiveShadow = true;
+  g.add(base);
+  // 台基边线（压阑石）
+  const edge = new THREE.Mesh(new THREE.BoxGeometry(w+0.9, 0.18, d+0.9), M.stoneDark());
+  edge.position.y = h;
+  g.add(edge);
+  return g;
+}
+
+// 柱廊：正面 n 根柱
+function makeColumns(w, n, h, mat){
+  const g = new THREE.Group();
+  const step = w/(n-1);
+  for(let i=0;i<n;i++){
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, h, 12), mat||M.pillar());
+    c.position.set(-w/2 + i*step, h/2, 0);
+    c.castShadow = true;
+    g.add(c);
+  }
+  return g;
+}
+
+/* ============================================================
+   建筑工厂
+   ============================================================ */
+// 通用单层殿：台基 + 红墙 + 屋顶 + 可选柱廊
+function makeHall(cfg){
+  const g = new THREE.Group();
+  const { w, d, wallH, roofH, baseH=0.7, cols=0, green=false, door=true } = cfg;
+
+  g.add(makeBase(w, d, baseH, M.stone()));
+
+  // 墙体
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), M.wall());
+  wall.position.y = baseH + wallH/2;
+  wall.castShadow = true; wall.receiveShadow = true;
+  g.add(wall);
+
+  // 门洞（深色凹板）
+  if(door){
+    const dw = w*0.32, dh = wallH*0.72;
+    const dmat = M.woodDark();
+    const doorM = new THREE.Mesh(new THREE.BoxGeometry(dw, dh, 0.3), dmat);
+    doorM.position.set(0, baseH + dh/2, d/2);
+    g.add(doorM);
+    // 两侧窗（朱墙上深色竖条）
+    for(const sx of [-1,1]){
+      const win = new THREE.Mesh(new THREE.BoxGeometry(w*0.16, wallH*0.4, 0.2), M.woodDark());
+      win.position.set(sx*w*0.3, baseH + wallH*0.55, d/2);
+      g.add(win);
+    }
+  }
+
+  // 柱廊
+  if(cols>0){
+    const cl = makeColumns(w*0.96, cols, wallH+0.2, M.pillar());
+    cl.position.set(0, baseH, d/2 - 0.1);
+    g.add(cl);
+    // 额坊
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(w*0.98, 0.3, 0.35), M.wood());
+    lintel.position.set(0, baseH + wallH + 0.05, d/2 - 0.1);
+    g.add(lintel);
+  }
+
+  // 屋顶
+  const roof = makeRoof(w*1.06, d*1.06, roofH, {green});
+  roof.position.y = baseH + wallH;
+  g.add(roof);
+
+  return g;
+}
+
+// 重檐大殿（核心）
+function makeMainHall(){
+  const g = new THREE.Group();
+  const w=16, d=13, baseH=1.4;
+
+  g.add(makeBase(w, d, baseH, M.stone()));
+  // 须弥座台阶（前阶）
+  const steps = new THREE.Mesh(new THREE.BoxGeometry(w*0.5, 0.5, 1.6), M.stoneDark());
+  steps.position.set(0, 0.25, d/2 + 0.8);
+  g.add(steps);
+
+  // 墙体
+  const wallH = 6.2;
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, d), M.wall());
+  wall.position.y = baseH + wallH/2;
+  wall.castShadow = true; wall.receiveShadow = true;
+  g.add(wall);
+
+  // 前廊柱（蟠龙石柱暗示：用更粗的红柱）
+  const cols = makeColumns(w*0.92, 6, wallH+0.6, M.pillar());
+  cols.position.set(0, baseH, d/2 - 0.3);
+  cols.children.forEach(c=>{c.scale.set(1.5,1,1.5);});
+  g.add(cols);
+  // 额坊 + 斗栱层（一排小方块）
+  const dougei = new THREE.Mesh(new THREE.BoxGeometry(w*0.98, 0.7, 0.7), M.wood());
+  dougei.position.set(0, baseH + wallH + 0.35, d/2 - 0.2);
+  g.add(dougei);
+
+  // 下檐屋顶
+  const lower = makeRoof(w*1.18, d*1.18, 2.4, {});
+  lower.position.y = baseH + wallH + 0.7;
+  g.add(lower);
+
+  // 上层墙（收分）
+  const upperWallH = 2.6;
+  const uw = w*0.62, ud = d*0.62;
+  const uwall = new THREE.Mesh(new THREE.BoxGeometry(uw, upperWallH, ud), M.wallDeep());
+  uwall.position.y = baseH + wallH + 0.7 + 2.4 + upperWallH/2;
+  g.add(uwall);
+
+  // 上檐屋顶
+  const upper = makeRoof(uw*1.12, ud*1.12, 2.2, {});
+  upper.position.y = baseH + wallH + 0.7 + 2.4 + upperWallH;
+  g.add(upper);
+
+  // 屋顶宝顶
+  const bao = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 12), M.gold());
+  bao.position.y = baseH + wallH + 0.7 + 2.4 + upperWallH + 2.2 + 0.4;
+  g.add(bao);
+  const spire = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.0, 12), M.gold());
+  spire.position.y = bao.position.y + 0.7;
+  g.add(spire);
+
+  return g;
+}
+
+// 牌坊：四柱三间
+function makePaifang(){
+  const g = new THREE.Group();
+  const mat = M.stone();
+  const pMat = M.stoneDark();
+  const totalW = 16, colH = 8.4;
+  const colX = [-7.2, -2.4, 2.4, 7.2];
+  // 四柱
+  for(const x of colX){
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.7, colH, 0.7), pMat);
+    c.position.set(x, colH/2, 0);
+    c.castShadow = true;
+    g.add(c);
+    // 柱顶石
+    const cap = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.4, 0.95), mat);
+    cap.position.set(x, colH+0.2, 0); g.add(cap);
+  }
+  // 三层横梁（额坊）
+  const beamYs = [colH*0.62, colH*0.80, colH*0.96];
+  for(let i=0;i<beamYs.length;i++){
+    const b = new THREE.Mesh(new THREE.BoxGeometry(totalW+0.4, 0.55-i*0.08, 0.5), mat);
+    b.position.set(0, beamYs[i], 0); b.castShadow=true; g.add(b);
+  }
+  // 中央匾额
+  const plaque = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.3, 0.3), M.woodDark());
+  plaque.position.set(0, colH*0.79, 0.32); g.add(plaque);
+  // 顶部小屋顶
+  const roof = makeRoof(totalW+1, 1.6, 1.5, {});
+  roof.position.set(0, colH+0.5, 0);
+  g.add(roof);
+  // 抱鼓石（基座）
+  for(const x of colX){
+    const gu = new THREE.Mesh(new THREE.CylinderGeometry(0.6,0.7,0.5,16), mat);
+    gu.position.set(x, 0.25, 0.5); g.add(gu);
+  }
+  return g;
+}
+
+// 亭子：四柱攒尖
+function makePavilion(roofH=2.4, scale=1){
+  const g = new THREE.Group();
+  // 台基
+  g.add(makeBase(5*scale, 5*scale, 0.5, M.stone()));
+  // 四柱
+  const colH = 3.4*scale;
+  for(const [x,z] of [[2,2],[2,-2],[-2,2],[-2,-2]]){
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.26,colH,12), M.pillar());
+    c.position.set(x*scale, 0.5+colH/2, z*scale); c.castShadow=true; g.add(c);
+  }
+  // 额坊圈
+  for(const [x,z] of [[0,2],[0,-2],[2,0],[-2,0]]){
+    const b = beamBetween(
+      new THREE.Vector3(x*2*scale, 0.5+colH, z*2*scale),
+      new THREE.Vector3(-x*2*scale, 0.5+colH, -z*2*scale),
+      0.3, M.wood());
+    g.add(b);
+  }
+  // 攒尖顶：四棱锥
+  const eaves=0.5;
+  const geo = new THREE.CylinderGeometry(0.02,1,roofH,4,1,false);
+  const roof = new THREE.Mesh(geo, M.tile());
+  roof.rotation.y = Math.PI/4;
+  roof.scale.set((5*scale+eaves*2)/Math.SQRT2, roofH, (5*scale+eaves*2)/Math.SQRT2);
+  roof.position.y = 0.5+colH+roofH/2;
+  roof.castShadow=true; g.add(roof);
+  // 宝顶
+  const bao = new THREE.Mesh(new THREE.SphereGeometry(0.25*scale,12,10), M.gold());
+  bao.position.y = 0.5+colH+roofH+0.15; g.add(bao);
+  return g;
+}
+
+// 两层楼阁（梳妆楼）
+function makeTower(){
+  const g = new THREE.Group();
+  const w=8.5, d=7.5, baseH=0.8;
+  g.add(makeBase(w, d, baseH, M.stone()));
+  // 一层
+  const w1H=3.8;
+  const w1 = new THREE.Mesh(new THREE.BoxGeometry(w, w1H, d), M.wall());
+  w1.position.y = baseH+w1H/2; w1.castShadow=true; g.add(w1);
+  // 一层柱廊
+  const c1 = makeColumns(w*0.9, 4, w1H+0.3, M.pillar());
+  c1.position.set(0, baseH, d/2-0.2); g.add(c1);
+  // 一层屋顶（腰檐）
+  const r1 = makeRoof(w*1.12, d*1.12, 1.4, {});
+  r1.position.y = baseH+w1H; g.add(r1);
+  // 二层（收分）
+  const w2=w*0.78, d2=d*0.78, w2H=3.0;
+  const fl = new THREE.Mesh(new THREE.BoxGeometry(w2, 0.3, d2), M.stoneDark());
+  fl.position.y = baseH+w1H+1.4; g.add(fl);
+  const w2m = new THREE.Mesh(new THREE.BoxGeometry(w2, w2H, d2), M.wall());
+  w2m.position.y = baseH+w1H+1.4+w2H/2; w2m.castShadow=true; g.add(w2m);
+  // 二层窗
+  for(const sx of [-1,0,1]){
+    const win = new THREE.Mesh(new THREE.BoxGeometry(w2*0.2, w2H*0.5, 0.2), M.woodDark());
+    win.position.set(sx*w2*0.28, baseH+w1H+1.4+w2H*0.6, d2/2); g.add(win);
+  }
+  // 二层屋顶
+  const r2 = makeRoof(w2*1.16, d2*1.16, 2.0, {});
+  r2.position.y = baseH+w1H+1.4+w2H; g.add(r2);
+  // 宝顶
+  const bao = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.2, 12), M.gold());
+  bao.position.y = baseH+w1H+1.4+w2H+2.0+0.5; g.add(bao);
+  return g;
+}
+
+// 程溪
+function makeStream(){
+  const g = new THREE.Group();
+  const geo = new THREE.PlaneGeometry(180, 14, 24, 1);
+  // 微弯曲（局部 y 在旋转后变为世界 z，实现溪流左右蜿蜒）
+  const pos = geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x = pos.getX(i);
+    pos.setY(i, Math.sin(x*0.03)*3.5);
+  }
+  geo.computeVertexNormals();
+  const water = new THREE.Mesh(geo, M.water());
+  water.rotation.x = -Math.PI/2;
+  water.position.set(0, 0.08, 82);
+  water.receiveShadow = true;
+  g.add(water);
+  // 溪岸石（南北两岸，跟随水面蜿蜒）
+  for(let i=0;i<40;i++){
+    const x = -88 + i*4.5 + (i%3-1);
+    const cz = 82 - Math.sin(x*0.03)*3.5; // 水面中心世界 z
+    for(const off of [-7.5, 7.5]){ // 南岸、北岸
+      const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.5 + (i%4)*0.22, 0), M.stoneDark());
+      s.position.set(x, 0.3, cz + off + (i%2?0.6:-0.6));
+      s.rotation.set(i*0.3, i*0.7, i*0.5);
+      s.castShadow = true;
+      g.add(s);
+    }
+  }
+  return g;
+}
+
+// 树木
+function makeTree(x, z, s=1){
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18*s,0.26*s,1.6*s,8), M.trunk());
+  trunk.position.y = 0.8*s; trunk.castShadow=true; g.add(trunk);
+  for(let i=0;i<3;i++){
+    const c = new THREE.Mesh(new THREE.ConeGeometry((1.4-i*0.3)*s, (1.8-i*0.2)*s, 9), M.tree());
+    c.position.y = (1.4 + i*1.0)*s; c.castShadow=true; g.add(c);
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+
+// 远山
+function makeMountains(){
+  const g = new THREE.Group();
+  const peaks = [
+    [-60,-120,26,30],[ -20,-140,34,40],[30,-130,30,36],
+    [70,-125,24,28],[-90,-110,20,24],[100,-135,22,26],
+    [-110,-140,18,22],[130,-120,20,24],[0,-155,40,46],
+  ];
+  for(const [x,z,r,h] of peaks){
+    const m = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), M.mountain());
+    m.position.set(x, h/2-2, z);
+    m.rotation.y = (x*0.1);
+    g.add(m);
+  }
+  return g;
+}
+
+/* ============================================================
+   地面与环境
+   ============================================================ */
+// 草地
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(260, 64),
+  M.grass()
+);
+ground.rotation.x = -Math.PI/2;
+ground.position.y = -0.02;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// 中轴石板甬道
+const path = new THREE.Mesh(new THREE.BoxGeometry(7, 0.12, 130), M.stoneDark());
+path.position.set(0, 0.02, 6);
+path.receiveShadow = true;
+scene.add(path);
+// 甬道分缝（横条）
+for(let z=-55;z<=70;z+=4){
+  const line = new THREE.Mesh(new THREE.BoxGeometry(7.1, 0.13, 0.18), M.stone());
+  line.position.set(0, 0.04, z);
+  scene.add(line);
+}
+
+// 院墙（红墙围合，东西两侧）
+for(const sx of [-1,1]){
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(0.6, 3.2, 70), M.wall());
+  wall.position.set(sx*34, 1.6, 6);
+  wall.castShadow=true; wall.receiveShadow=true;
+  scene.add(wall);
+  // 墙顶瓦
+  const wc = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.4, 70), M.tile());
+  wc.position.set(sx*34, 3.4, 6);
+  scene.add(wc);
+}
+
+scene.add(makeMountains());
+
+// 散布树木
+const treeData = [
+  [-44,30],[-44,0],[-44,-25],[-44,-50],
+  [44,30],[44,0],[44,-25],[44,-50],
+  [-30,70],[30,70],[-15,95],[20,98],
+  [-60,-70],[60,-72],[0,108],[80,-40],[-80,-35],
+  [-50,50],[50,52],[-70,10],[70,12],
+];
+for(const [x,z] of treeData) scene.add(makeTree(x,z, 0.9 + ((x+z)%3)*0.12));
+
+// 灯笼（中轴两侧点缀）
+function makeLantern(x,z){
+  const g = new THREE.Group();
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.14,4,10), M.woodDark());
+  pole.position.y=2; pole.castShadow=true; g.add(pole);
+  const lan = new THREE.Mesh(new THREE.SphereGeometry(0.55,16,12), new THREE.MeshStandardMaterial({color:0xd23b2e, emissive:0x5a0c08, roughness:0.5}));
+  lan.position.y=3.4; g.add(lan);
+  g.position.set(x,0,z); return g;
+}
+scene.add(makeLantern(-5, 50)); scene.add(makeLantern(5, 50));
+scene.add(makeLantern(-5, 8)); scene.add(makeLantern(5, 8));
+
+/* ============================================================
+   放置建筑 + 注册可点击
+   ============================================================ */
+const clickable = []; // {mesh, spot}
+
+function register(group, spot){
+  group.traverse(o=>{
+    if(o.isMesh){
+      o.userData.spotId = spot.id;
+      clickable.push(o);
+    }
+  });
+}
+
+// 建筑实例
+const builds = {
+  paifang: makePaifang(),
+  shanmen: makeHall({w:13, d:8, wallH:5, roofH:2.6, baseH:0.8, cols:4, door:true}),
+  xiangting: makePavilion(2.6, 1.05),
+  dongyutang: makeHall({w:9, d:6.5, wallH:3.8, roofH:2.0, baseH:0.6, door:true}),
+  xiking: makeHall({w:9, d:6.5, wallH:3.8, roofH:2.0, baseH:0.6, door:true}),
+  dadian: makeMainHall(),
+  shuzhuang: makeTower(),
+  beiting: makePavilion(2.4, 0.95),
+  houdian: makeHall({w:11, d:8.5, wallH:4.6, roofH:2.4, baseH:0.9, cols:4, door:true}),
+  chengxi: makeStream(),
+};
+
+// 布局坐标（与 SPOTS.pos 对应，建筑放于景点位置）
+const layout = {
+  paifang:[0,0,60],
+  shanmen:[0,0,38],
+  xiangting:[0,0,20],
+  dongyutang:[24,0,22],
+  xiking:[-24,0,22],
+  dadian:[0,0,-4],
+  shuzhuang:[18,0,-26],
+  beiting:[-16,0,-24],
+  houdian:[0,0,-42],
+  chengxi:[0,0,0], // 溪流内部已绝对定位
+};
+for(const id in builds){
+  const [x,y,z] = layout[id];
+  builds[id].position.set(x,y,z);
+  scene.add(builds[id]);
+}
+// 注册可点击
+for(const s of SPOTS){
+  if(builds[s.id]) register(builds[s.id], s);
+}
+
+/* ============================================================
+   高亮 & 点击
+   ============================================================ */
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let hoverObj = null;
+let activeSpotId = null;
+const infoCard = document.getElementById('info-card');
+
+function setHover(obj){
+  if(hoverObj && hoverObj!==obj){
+    hoverObj.material.emissive && (hoverObj.material.emissive.setHex(0x000000));
+  }
+  hoverObj = obj;
+  if(obj){
+    obj.material.emissive && (obj.material.emissive.setHex(0x3a1a00));
+    container.style.cursor = 'pointer';
+  }else{
+    container.style.cursor = 'grab';
+  }
+}
+
+function spotOf(obj){
+  if(!obj) return null;
+  return SPOTS.find(s=>s.id===obj.userData.spotId) || null;
+}
+
+function onPointerMove(e){
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - r.left)/r.width)*2 - 1;
+  pointer.y = -((e.clientY - r.top)/r.height)*2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(clickable, false);
+  setHover(hits.length? hits[0].object : null);
+}
+
+function onPointerDown(e){
+  if(e.button!==0) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - r.left)/r.width)*2 - 1;
+  pointer.y = -((e.clientY - r.top)/r.height)*2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(clickable, false);
+  if(hits.length){
+    const s = spotOf(hits[0].object);
+    if(s){ selectSpot(s.id, true); }
+  }
+}
+renderer.domElement.addEventListener('pointermove', onPointerMove);
+renderer.domElement.addEventListener('pointerdown', onPointerDown);
+
+/* ============================================================
+   信息卡 & 导航
+   ============================================================ */
+const spotListEl = document.getElementById('spot-list');
+SPOTS.forEach((s, i)=>{
+  const el = document.createElement('div');
+  el.className = 'spot-item';
+  el.dataset.id = s.id;
+  el.innerHTML = `<span class="idx">${i+1}</span><span>${s.name}</span>`;
+  el.addEventListener('click', ()=>selectSpot(s.id, true));
+  spotListEl.appendChild(el);
+});
+
+function showInfo(spot){
+  document.getElementById('ic-name').firstChild.textContent = spot.name;
+  document.getElementById('ic-sub').textContent = spot.sub;
+  document.getElementById('ic-tag').textContent = spot.tag;
+  document.getElementById('ic-desc').textContent = spot.desc;
+  document.getElementById('ic-feat').innerHTML = spot.feat;
+  infoCard.classList.add('show');
+}
+function hideInfo(){ infoCard.classList.remove('show'); }
+document.getElementById('ic-close').addEventListener('click', ()=>{ hideInfo(); setActive(null); });
+
+function setActive(id){
+  activeSpotId = id;
+  document.querySelectorAll('.spot-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.id===id);
+  });
+}
+
+/* 相机飞行 */
+let tween = null;
+const clock = new THREE.Clock();
+function flyTo(camPos, target){
+  tween = {
+    from: camera.position.clone(),
+    to: new THREE.Vector3(...camPos),
+    fromT: controls.target.clone(),
+    toT: new THREE.Vector3(...target),
+    t: 0, dur: 1.1,
+  };
+}
+function selectSpot(id, fly){
+  const s = SPOTS.find(x=>x.id===id);
+  if(!s) return;
+  setActive(id);
+  showInfo(s);
+  if(fly) flyTo(s.cam, s.pos);
+}
+
+/* 重置俯瞰 */
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  setActive(null); hideInfo();
+  flyTo([0, 60, 110], [0, 6, 10]);
+});
+
+/* ============================================================
+   渲染循环
+   ============================================================ */
+function resize(){
+  camera.aspect = W()/H();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W(), H());
+}
+window.addEventListener('resize', resize);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  controls.update();
+
+  if(tween){
+    tween.t += dt / tween.dur;
+    const k = Math.min(1, tween.t);
+    const e = k<0.5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2)/2;
+    camera.position.lerpVectors(tween.from, tween.to, e);
+    controls.target.lerpVectors(tween.fromT, tween.toT, e);
+    if(k>=1) tween = null;
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+/* 启动：隐藏加载页 */
+window.__loaded = true;
+const loading = document.getElementById('loading');
+const loadTxt = document.getElementById('load-txt');
+const loadErr = document.getElementById('load-err');
+function finish(){
+  loading.classList.add('hide');
+  setTimeout(()=>loading.remove(), 700);
+  // 默认选中大殿以展示信息卡
+  setTimeout(()=>{ selectSpot('dadian', false); }, 400);
+}
+// 稍延一帧确保首帧已渲染
+requestAnimationFrame(()=>requestAnimationFrame(finish));
+
+/* CDN 失败兜底提示 */
+setTimeout(()=>{
+  if(!window.__loaded){
+    loadTxt.style.display='none';
+    loadErr.style.display='block';
+    loadErr.innerHTML = '三维引擎加载失败，可能是网络无法访问 CDN。<br>请检查网络后刷新，或更换可访问 jsdelivr 的网络环境。';
+  }
+}, 9000);
+
+</script>
+</body>
+</html>
