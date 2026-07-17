@@ -121,11 +121,115 @@
   #loading .txt{font-size:15px;letter-spacing:4px;color:var(--jin-light);}
   #loading .err{font-size:12px;color:#c98a82;max-width:420px;text-align:center;line-height:1.7;display:none;}
 
+  /* 地图式导览工具：参考全域手绘地图的信息层级，转化为祖庙三维导览 */
+  #search-shell{
+    position:absolute;z-index:28;top:18px;left:50%;transform:translateX(-50%);
+    width:min(500px,calc(100vw - 540px));min-width:320px;height:46px;
+    display:flex;align-items:center;gap:10px;padding:0 14px;
+    color:#5d5347;background:rgba(255,252,246,.94);border:1px solid rgba(82,67,49,.18);
+    border-radius:12px;box-shadow:0 8px 26px rgba(28,19,12,.2);backdrop-filter:blur(12px);
+  }
+  #search-shell .search-icon{font:22px/1 Arial;color:#9a8b77}
+  #spot-search{width:100%;border:0;outline:0;background:transparent;color:#352b21;
+    font:14px/1.2 "Noto Serif SC","Songti SC",serif;letter-spacing:1px}
+  #spot-search::placeholder{color:#9a8f80}
+  #search-clear{border:0;background:transparent;color:#8a7a68;font-size:20px;padding:3px 5px;display:none}
+  #search-results{
+    position:absolute;left:0;right:0;top:52px;display:none;overflow:hidden;
+    background:rgba(255,252,246,.98);border:1px solid rgba(82,67,49,.16);border-radius:10px;
+    box-shadow:0 14px 32px rgba(28,19,12,.22);color:#352b21;
+  }
+  #search-results.show{display:block}
+  .search-result{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;
+    border-bottom:1px solid rgba(82,67,49,.09);font-size:13px}
+  .search-result:last-child{border-bottom:0}.search-result:hover{background:#f4ead7}
+  .search-result b{color:var(--zhu);font:12px Arial}.search-result small{margin-left:auto;color:#a19280}
+
+  .side-tools{position:absolute;z-index:24;display:flex;flex-direction:column;gap:8px}
+  .side-tools.left{left:236px;top:102px}.side-tools.right{right:18px;top:102px}
+  .tool-btn{
+    width:48px;min-height:48px;border:1px solid rgba(82,67,49,.16);border-radius:12px;
+    color:#594c3d;background:rgba(255,252,246,.94);box-shadow:0 7px 20px rgba(28,19,12,.18);
+    backdrop-filter:blur(10px);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;font:10px/1.1 "Noto Serif SC",serif;transition:.2s;
+  }
+  .tool-btn:hover,.tool-btn.active{transform:translateY(-2px);color:#fff;background:var(--zhu);border-color:var(--jin)}
+  .tool-btn .tool-icon{font:600 17px/1 Arial}.tool-btn.wide{height:auto;padding:9px 4px}
+  #zoom-tools{position:absolute;left:236px;bottom:96px;z-index:24;display:flex;flex-direction:column;gap:8px}
+  #zoom-tools button{width:42px;height:42px;border:1px solid rgba(82,67,49,.16);border-radius:11px;
+    background:rgba(255,252,246,.94);color:#594c3d;font-size:20px;box-shadow:0 7px 20px rgba(28,19,12,.16)}
+
+  #category-bar{
+    position:absolute;z-index:26;bottom:14px;left:50%;transform:translateX(-50%);
+    display:flex;align-items:stretch;padding:5px;background:rgba(255,252,246,.96);
+    border:1px solid rgba(82,67,49,.15);border-radius:15px;box-shadow:0 10px 28px rgba(28,19,12,.22);
+    backdrop-filter:blur(12px);
+  }
+  #category-bar button{
+    position:relative;min-width:75px;height:52px;border:0;background:transparent;color:#6f6253;
+    border-radius:10px;font:12px/1.2 "Noto Serif SC",serif;letter-spacing:1px;transition:.2s;
+  }
+  #category-bar button span{display:block;font:18px/1 Arial;margin-bottom:5px;color:#9f927f}
+  #category-bar button:hover,#category-bar button.active{color:var(--zhu);background:#f5e9d5}
+  #category-bar button.active span{color:var(--zhu)}
+  #hint{bottom:76px;padding-left:246px}
+  #info-card{bottom:88px}
+  aside#spot-nav{bottom:152px;transition:transform .25s,opacity .25s}
+  aside#spot-nav.collapsed{transform:translateX(-120%);opacity:0;pointer-events:none}
+  .spot-item.filtered-out{display:none}
+
+  #route-panel{
+    position:absolute;z-index:27;right:78px;top:102px;width:300px;color:#3d3024;
+    background:rgba(255,252,246,.97);border:1px solid rgba(82,67,49,.16);border-radius:14px;
+    box-shadow:0 14px 36px rgba(28,19,12,.28);overflow:hidden;opacity:0;pointer-events:none;
+    transform:translateX(16px);transition:.25s;
+  }
+  #route-panel.show{opacity:1;pointer-events:auto;transform:none}
+  #route-panel .route-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;
+    color:#fff;background:linear-gradient(90deg,var(--zhu),var(--zhu-deep))}
+  #route-panel .route-head b{letter-spacing:3px}.panel-close{border:0;background:transparent;color:inherit;font-size:20px}
+  .route-body{padding:14px 16px}.route-summary{display:flex;justify-content:space-between;margin-bottom:13px;
+    font-size:11px;color:#857662}.route-summary b{display:block;color:var(--zhu);font-size:16px;margin-top:3px}
+  .route-stops{position:relative;margin:2px 0 14px;padding-left:20px;border-left:1px dashed #d5aa59}
+  .route-stops p{position:relative;margin:0 0 10px;font-size:12px}.route-stops p:last-child{margin:0}
+  .route-stops p:before{content:"";position:absolute;left:-25px;top:5px;width:8px;height:8px;border-radius:50%;
+    background:var(--jin);box-shadow:0 0 0 3px #f5ead4}
+  #route-start{width:100%;border:0;border-radius:8px;padding:11px;color:#fff;background:var(--zhu);
+    font:13px "Noto Serif SC",serif;letter-spacing:2px}
+  .route-progress{height:3px;background:#eadcc3;margin-top:10px;border-radius:3px;overflow:hidden}
+  .route-progress i{display:block;width:0;height:100%;background:var(--zhu);transition:.35s}
+
+  #toast{
+    position:absolute;z-index:40;left:50%;bottom:94px;transform:translate(-50%,18px);
+    max-width:min(520px,calc(100vw - 32px));padding:11px 18px;color:#fff;background:rgba(43,33,24,.9);
+    border:1px solid rgba(232,194,90,.55);border-radius:22px;font-size:12px;letter-spacing:1px;
+    opacity:0;pointer-events:none;transition:.25s;box-shadow:0 8px 24px rgba(0,0,0,.25)
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #compass{position:absolute;z-index:22;right:375px;bottom:95px;width:55px;height:55px;border-radius:50%;
+    display:grid;place-items:center;color:#6f201b;background:rgba(255,252,246,.82);border:1px solid rgba(82,67,49,.18);
+    box-shadow:0 6px 18px rgba(28,19,12,.15);font:11px Arial}
+  #compass:before{content:"";position:absolute;width:2px;height:34px;background:linear-gradient(var(--zhu) 50%,#827767 50%)}
+  #compass:after{content:"N";position:absolute;top:4px;font-size:9px;color:var(--zhu)}
+
   @media (max-width:720px){
-    aside#spot-nav{width:160px;top:84px;bottom:120px;}
-    #info-card{width:calc(100vw - 36px);right:18px;left:18px;}
+    header#topbar{padding:11px 16px 8px}
+    header#topbar .sub{font-size:10px;letter-spacing:1px}
+    #search-shell{top:72px;left:14px;right:14px;transform:none;width:auto;min-width:0;height:42px}
+    aside#spot-nav{display:none;left:14px;right:14px;top:124px;bottom:92px;width:auto}
+    aside#spot-nav.open{display:block}
+    #info-card{width:calc(100vw - 28px);right:14px;left:14px;bottom:84px;max-height:52vh;overflow:auto}
     header#topbar h1{font-size:19px;letter-spacing:3px;}
     header#topbar .meta{display:none;}
+    .side-tools.left{left:14px;top:auto;bottom:86px;flex-direction:row}.side-tools.left .tool-btn:not(#btn-guide){display:none}
+    .side-tools.right{right:14px;top:124px}.side-tools.right .tool-btn{width:44px;min-height:44px}
+    #zoom-tools{left:14px;bottom:150px}
+    #category-bar{left:0;right:0;bottom:0;transform:none;border-radius:14px 14px 0 0;
+      padding:4px 3px;overflow-x:auto;justify-content:space-between}
+    #category-bar button{min-width:64px;height:62px;font-size:11px}
+    #hint{display:none}#compass{display:none}
+    #route-panel{left:14px;right:66px;top:124px;width:auto}
+    #toast{bottom:78px}
   }
 </style>
 </head>
@@ -144,6 +248,29 @@
     </div>
   </header>
 
+  <div id="search-shell" role="search">
+    <span class="search-icon">⌕</span>
+    <input id="spot-search" type="search" autocomplete="off" placeholder="搜索殿宇、古迹与龙母故事" aria-label="搜索景点" />
+    <button id="search-clear" type="button" aria-label="清空搜索">×</button>
+    <div id="search-results" aria-label="搜索结果"></div>
+  </div>
+
+  <div class="side-tools left" aria-label="导览快捷工具">
+    <button class="tool-btn" id="btn-guide" type="button"><span class="tool-icon">☰</span>导览</button>
+    <button class="tool-btn" id="btn-locate" type="button"><span class="tool-icon">◎</span>入口</button>
+    <button class="tool-btn" id="btn-activity" type="button"><span class="tool-icon">节</span>活动</button>
+  </div>
+  <div class="side-tools right" aria-label="景区服务">
+    <button class="tool-btn" id="btn-view" type="button"><span class="tool-icon">◇</span>平面</button>
+    <button class="tool-btn" id="btn-route" type="button"><span class="tool-icon">⌁</span>路线</button>
+    <button class="tool-btn" id="btn-blessing" type="button"><span class="tool-icon">祈</span>祈愿</button>
+    <button class="tool-btn" id="btn-ticket" type="button"><span class="tool-icon">票</span>门票</button>
+  </div>
+  <div id="zoom-tools" aria-label="缩放工具">
+    <button id="zoom-in" type="button" aria-label="放大">＋</button>
+    <button id="zoom-out" type="button" aria-label="缩小">－</button>
+  </div>
+
   <aside id="spot-nav">
     <h3>景 点 云 游</h3>
     <div id="spot-list"></div>
@@ -160,6 +287,36 @@
       <div class="feat" id="ic-feat"></div>
     </div>
   </div>
+
+  <div id="route-panel" aria-label="推荐参观路线">
+    <div class="route-head"><b>祖庙精华路线</b><button class="panel-close" id="route-close" type="button">×</button></div>
+    <div class="route-body">
+      <div class="route-summary">
+        <span>预计用时<b>18 分钟</b></span>
+        <span>游览节点<b>7 处</b></span>
+        <span>路线类型<b>祈福线</b></span>
+      </div>
+      <div class="route-stops">
+        <p>石牌坊 · 岭海擎灵</p>
+        <p>山门 · 香亭 · 龙母大殿</p>
+        <p>梳妆楼 · 碑亭 · 后殿</p>
+      </div>
+      <button id="route-start" type="button">开始自动云游</button>
+      <div class="route-progress"><i id="route-progress-bar"></i></div>
+    </div>
+  </div>
+
+  <nav id="category-bar" aria-label="景点分类">
+    <button class="active" data-category="all" type="button"><span>⌂</span>全景</button>
+    <button data-category="axis" type="button"><span>中</span>中轴</button>
+    <button data-category="courtyard" type="button"><span>院</span>院落</button>
+    <button data-category="water" type="button"><span>≈</span>水脉</button>
+    <button data-category="culture" type="button"><span>文</span>古建</button>
+    <button data-category="service" type="button"><span>i</span>服务</button>
+  </nav>
+
+  <div id="compass" aria-hidden="true"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <div id="hint">
     <div class="ops">
@@ -795,6 +952,45 @@ for(const s of SPOTS){
   if(builds[s.id]) register(builds[s.id], s);
 }
 
+/* 地图式景点标记与推荐路线 */
+const markerSprites = new Map();
+function makeMarkerSprite(spot, index){
+  const cv = document.createElement('canvas');
+  cv.width = 360; cv.height = 112;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = 'rgba(255,252,246,.95)';
+  ctx.strokeStyle = '#d4a017'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.roundRect(8,8,344,88,28); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#9e2b25'; ctx.beginPath(); ctx.arc(53,52,31,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 25px Arial'; ctx.textAlign='center'; ctx.fillText(String(index+1).padStart(2,'0'),53,61);
+  ctx.fillStyle = '#352b21'; ctx.font = '600 26px "Noto Serif SC",serif'; ctx.textAlign='left'; ctx.fillText(spot.name,98,61);
+  const texture = new THREE.CanvasTexture(cv);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:false}));
+  sprite.scale.set(15.5,4.8,1);
+  sprite.position.set(spot.pos[0],spot.pos[1]+7.5,spot.pos[2]);
+  sprite.userData.spotId = spot.id;
+  sprite.renderOrder = 20;
+  scene.add(sprite); clickable.push(sprite); markerSprites.set(spot.id,sprite);
+}
+SPOTS.forEach(makeMarkerSprite);
+
+const ROUTE_IDS = ['paifang','shanmen','xiangting','dadian','shuzhuang','beiting','houdian'];
+const routePoints = ROUTE_IDS.map(id=>{
+  const s=SPOTS.find(x=>x.id===id);
+  return new THREE.Vector3(s.pos[0],.7,s.pos[2]);
+});
+const routeCurve = new THREE.CatmullRomCurve3(routePoints);
+const routeMaterial = new THREE.LineDashedMaterial({color:0xf2b632,dashSize:2.2,gapSize:1.1,transparent:true,opacity:.95});
+const routeLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(routeCurve.getPoints(120)),routeMaterial);
+routeLine.computeLineDistances(); routeLine.visible=false; scene.add(routeLine);
+
+const entrancePulse = new THREE.Mesh(
+  new THREE.RingGeometry(2.2,2.7,40),
+  new THREE.MeshBasicMaterial({color:0xe8c25a,transparent:true,opacity:.65,side:THREE.DoubleSide})
+);
+entrancePulse.rotation.x=-Math.PI/2; entrancePulse.position.set(0,.45,60); scene.add(entrancePulse);
+
 /* ============================================================
    高亮 & 点击
    ============================================================ */
@@ -895,12 +1091,126 @@ function selectSpot(id, fly){
   setActive(id);
   showInfo(s);
   if(fly) flyTo(s.cam, s.pos);
+  if(innerWidth<=720) document.getElementById('spot-nav').classList.remove('open');
 }
 
 /* 重置俯瞰 */
 document.getElementById('btn-reset').addEventListener('click', ()=>{
   setActive(null); hideInfo();
   flyTo([0, 60, 110], [0, 6, 10]);
+});
+
+/* ============================================================
+   地图式搜索、分类、路线与快捷服务
+   ============================================================ */
+const searchInput = document.getElementById('spot-search');
+const searchResults = document.getElementById('search-results');
+const searchClear = document.getElementById('search-clear');
+const spotNav = document.getElementById('spot-nav');
+const toast = document.getElementById('toast');
+let toastTimer = null;
+function showToast(text){
+  toast.textContent=text; toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('show'),3200);
+}
+function searchSpots(value){
+  const q=value.trim().toLowerCase();
+  searchClear.style.display=q?'block':'none';
+  const hits=q?SPOTS.filter(s=>`${s.name}${s.sub}${s.tag}${s.desc}`.toLowerCase().includes(q)):[];
+  searchResults.innerHTML=hits.slice(0,6).map(s=>`<div class="search-result" data-id="${s.id}"><b>◎</b><span>${s.name}</span><small>${s.tag}</small></div>`).join('');
+  searchResults.classList.toggle('show',!!q);
+  document.querySelectorAll('.spot-item').forEach(el=>{
+    const s=SPOTS.find(x=>x.id===el.dataset.id);
+    el.classList.toggle('filtered-out',!!q&&!hits.includes(s));
+  });
+  markerSprites.forEach((sprite,id)=>sprite.visible=!q||hits.some(s=>s.id===id));
+  if(q&&!hits.length) searchResults.innerHTML='<div class="search-result"><span>未找到相关景点，试试“龙母”或“古建”</span></div>';
+}
+searchInput.addEventListener('input',e=>searchSpots(e.target.value));
+searchInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const first=searchResults.querySelector('[data-id]');
+    if(first){selectSpot(first.dataset.id,true);searchResults.classList.remove('show')}
+  }
+});
+searchResults.addEventListener('click',e=>{
+  const item=e.target.closest('[data-id]');if(!item)return;
+  selectSpot(item.dataset.id,true);searchInput.value=SPOTS.find(s=>s.id===item.dataset.id).name;
+  searchResults.classList.remove('show');searchClear.style.display='block';
+});
+searchClear.addEventListener('click',()=>{searchInput.value='';searchSpots('');searchInput.focus()});
+
+const categoryMap={
+  all:SPOTS.map(s=>s.id),
+  axis:['paifang','shanmen','xiangting','dadian','houdian'],
+  courtyard:['dongyutang','xiking','shuzhuang','beiting'],
+  water:['chengxi'],
+  culture:['paifang','shanmen','dongyutang','xiking','dadian','shuzhuang','beiting','houdian']
+};
+function applyCategory(category){
+  if(category==='service'){
+    showToast('服务提示：票务、开放时间与现场活动请以景区当日公告为准。');
+    return;
+  }
+  const ids=categoryMap[category]||categoryMap.all;
+  document.querySelectorAll('.spot-item').forEach(el=>el.classList.toggle('filtered-out',!ids.includes(el.dataset.id)));
+  markerSprites.forEach((sprite,id)=>sprite.visible=ids.includes(id));
+  if(category==='all'){setActive(null);hideInfo();flyTo([0,60,110],[0,6,10])}
+  else if(ids.length===1) selectSpot(ids[0],true);
+}
+document.querySelectorAll('#category-bar button').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('#category-bar button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');applyCategory(btn.dataset.category);
+}));
+
+document.getElementById('btn-guide').addEventListener('click',()=>{
+  if(innerWidth<=720) spotNav.classList.toggle('open'); else spotNav.classList.toggle('collapsed');
+});
+document.getElementById('btn-locate').addEventListener('click',()=>{selectSpot('paifang',true);showToast('已定位至祖庙入口 · 石牌坊')});
+document.getElementById('btn-activity').addEventListener('click',()=>showToast('龙母诞等民俗活动以景区当年发布的时间安排为准。'));
+document.getElementById('btn-blessing').addEventListener('click',()=>showToast('云上祈愿 · 愿江河安澜，家宅平安，行旅顺遂。'));
+document.getElementById('btn-ticket').addEventListener('click',()=>showToast('本页暂不售票，请通过景区官方渠道查询开放与票务信息。'));
+
+document.getElementById('zoom-in').addEventListener('click',()=>{
+  camera.position.sub(controls.target).multiplyScalar(.78).add(controls.target);
+});
+document.getElementById('zoom-out').addEventListener('click',()=>{
+  camera.position.sub(controls.target).multiplyScalar(1.24).add(controls.target);
+});
+let flatView=false;
+document.getElementById('btn-view').addEventListener('click',e=>{
+  flatView=!flatView;
+  e.currentTarget.innerHTML=flatView?'<span class="tool-icon">立</span>三维':'<span class="tool-icon">◇</span>平面';
+  flatView?flyTo([0,145,18],[0,0,10]):flyTo([0,60,110],[0,6,10]);
+  showToast(flatView?'已切换为平面导览视角':'已返回三维沉浸视角');
+});
+
+const routePanel=document.getElementById('route-panel');
+function toggleRoute(force){
+  const show=force??!routePanel.classList.contains('show');
+  routePanel.classList.toggle('show',show);routeLine.visible=show;
+  document.getElementById('btn-route').classList.toggle('active',show);
+}
+document.getElementById('btn-route').addEventListener('click',()=>toggleRoute());
+document.getElementById('route-close').addEventListener('click',()=>toggleRoute(false));
+let routeTimer=null,routeIndex=0;
+const routeStart=document.getElementById('route-start');
+const routeProgress=document.getElementById('route-progress-bar');
+routeStart.addEventListener('click',()=>{
+  if(routeTimer){
+    clearInterval(routeTimer);routeTimer=null;routeStart.textContent='继续自动云游';return;
+  }
+  toggleRoute(true);routeStart.textContent='暂停云游';
+  const next=()=>{
+    selectSpot(ROUTE_IDS[routeIndex],true);
+    routeProgress.style.width=`${(routeIndex+1)/ROUTE_IDS.length*100}%`;
+    routeIndex++;
+    if(routeIndex>=ROUTE_IDS.length){
+      clearInterval(routeTimer);routeTimer=null;routeIndex=0;routeStart.textContent='重新开始云游';
+      showToast('祖庙精华路线云游完成');
+    }
+  };
+  next();routeTimer=setInterval(next,4300);
 });
 
 /* ============================================================
@@ -917,6 +1227,10 @@ function animate(){
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
   controls.update();
+  const pulse = 1 + Math.sin(performance.now()*.003)*.18;
+  entrancePulse.scale.setScalar(pulse);
+  entrancePulse.material.opacity=.38+Math.sin(performance.now()*.003)*.18;
+  routeMaterial.dashOffset-=dt*1.8;
 
   if(tween){
     tween.t += dt / tween.dur;
@@ -939,8 +1253,8 @@ const loadErr = document.getElementById('load-err');
 function finish(){
   loading.classList.add('hide');
   setTimeout(()=>loading.remove(), 700);
-  // 默认选中大殿以展示信息卡
-  setTimeout(()=>{ selectSpot('dadian', false); }, 400);
+  // 桌面端展示大殿信息；移动端优先保留完整导览视野
+  if(innerWidth>720) setTimeout(()=>{ selectSpot('dadian', false); }, 400);
 }
 // 稍延一帧确保首帧已渲染
 requestAnimationFrame(()=>requestAnimationFrame(finish));
